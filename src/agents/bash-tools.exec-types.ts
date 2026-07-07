@@ -23,6 +23,9 @@ import type { ExecReviewerConfig } from "./exec-auto-reviewer.js";
 
 /** Runtime defaults passed into exec/process tool factories. */
 export type ExecToolDefaults = {
+  /** Skill-scoped environment variables merged into exec subprocesses before
+   *  per-call env overrides. Populated from skills.entries.*.env config. */
+  env?: Record<string, string>;
   hasCronTool?: boolean;
   host?: ExecTarget;
   mode?: ExecMode;

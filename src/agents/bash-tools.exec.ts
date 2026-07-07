@@ -1780,11 +1780,13 @@ export function createExecTool(
         const inheritedBaseEnv = coerceEnv(process.env);
         const resolvedExecEnvState = getResolvedExecEnvPreparedState(params);
         const channelContextEnv = buildChannelContextEnv(defaults?.channelContext);
+        const defaultEnv = defaults?.env ? coerceEnv(defaults.env) : undefined;
         const requestedEnv: Record<string, string> | undefined =
           params.env !== undefined ||
           resolvedExecEnvState?.pluginEnv !== undefined ||
-          channelContextEnv !== undefined
-            ? { ...params.env, ...resolvedExecEnvState?.pluginEnv, ...channelContextEnv }
+          channelContextEnv !== undefined ||
+          defaultEnv !== undefined
+            ? { ...defaultEnv, ...params.env, ...resolvedExecEnvState?.pluginEnv, ...channelContextEnv }
             : undefined;
         const hostEnvResult =
           host === "sandbox"

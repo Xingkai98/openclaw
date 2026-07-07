@@ -325,6 +325,21 @@ function isApplyPatchAllowedForModel(params: {
   });
 }
 
+function resolveExecSkillEnvDefaults(cfg?: OpenClawConfig): Record<string, string> | undefined {
+  const entries = cfg?.skills?.entries;
+  if (!entries) return undefined;
+  const resolved: Record<string, string> = {};
+  for (const skillConfig of Object.values(entries)) {
+    if (!skillConfig || skillConfig.enabled === false || !skillConfig.env) continue;
+    for (const [key, value] of Object.entries(skillConfig.env)) {
+      const trimmedKey = key.trim();
+      if (!trimmedKey) continue;
+      resolved[trimmedKey] = String(value);
+    }
+  }
+  return Object.keys(resolved).length > 0 ? resolved : undefined;
+}
+
 function resolveExecConfig(params: { cfg?: OpenClawConfig; agentId?: string }) {
   const cfg = params.cfg;
   const globalExec = cfg?.tools?.exec;
@@ -841,6 +856,9 @@ export function createOpenClawCodingTools(options?: {
         approvalReviewerDeviceId: options?.approvalReviewerDeviceId,
         backgroundMs: options?.exec?.backgroundMs ?? execConfig.backgroundMs,
         timeoutSec: options?.exec?.timeoutSec ?? execConfig.timeoutSec,
+        env:
+          options?.exec?.env ??
+          resolveExecSkillEnvDefaults(options?.config),
         approvalRunningNoticeMs:
           options?.exec?.approvalRunningNoticeMs ?? execConfig.approvalRunningNoticeMs,
         notifyOnExit: options?.exec?.notifyOnExit ?? execConfig.notifyOnExit,
