@@ -64,6 +64,11 @@ export function resolveSessionFilePathOptions(params: {
 const SAFE_SESSION_ID_RE = /^[a-z0-9][a-z0-9._-]{0,127}$/i;
 
 export function validateSessionId(sessionId: string): string {
+  // Guard against runtime undefined/null reaching .trim() when a store entry
+  // has no sessionId (aborted init, store rewrite, etc.).
+  if (typeof sessionId !== "string") {
+    throw new Error(`Invalid session ID: ${String(sessionId)}`);
+  }
   const trimmed = sessionId.trim();
   if (
     !SAFE_SESSION_ID_RE.test(trimmed) ||
