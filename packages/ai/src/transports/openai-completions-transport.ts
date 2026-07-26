@@ -29,6 +29,7 @@ import {
 } from "../internal/runtime.js";
 import { stripSystemPromptCacheBoundary } from "../internal/shared.js";
 import { createAssistantMessageEventStream } from "../utils/event-stream.js";
+import { notifyLlmRequestActivity } from "../utils/llm-request-activity.js";
 import { createDeepSeekTextFilter } from "./deepseek-text-filter.js";
 import {
   buildGuardedModelFetch,
@@ -611,6 +612,10 @@ async function processOpenAICompletionsStream(
   for await (const rawChunk of guardedStream) {
     throwIfModelStreamAborted(options?.signal);
     chunkPushedEvent = false;
+    // Each SSE chunk from the model resets the idle watchdog so reasoning-only
+    // tokens (which may not produce visible stream events) still count as
+    // liveness progress (#113323).
+    notifyLlmRequestActivity(options?.signal);
     if (!rawChunk || typeof rawChunk !== "object") {
       await cooperativeScheduler.afterEvent();
       continue;
