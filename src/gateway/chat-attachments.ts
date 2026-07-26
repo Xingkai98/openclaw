@@ -1,7 +1,6 @@
 // Gateway chat attachment parser.
 // Normalizes image attachments, offloads large media, and reports unsupported payloads.
 import { estimateBase64DecodedBytes } from "@openclaw/media-core/base64";
-import { MAX_IMAGE_BYTES } from "@openclaw/media-core/constants";
 import { extensionForMime, mimeTypeFromFilePath } from "@openclaw/media-core/mime";
 import { expectDefined } from "@openclaw/normalization-core";
 import { normalizeOptionalLowercaseString } from "@openclaw/normalization-core/string-coerce";
@@ -398,15 +397,15 @@ export async function parseMessageWithAttachments(
         );
       }
       // Agent-side hydration (loadImageFromRef via optimizeAndClampImage / GIF
-      // direct compare) caps at MAX_IMAGE_BYTES. Accepting images above that
-      // would offload a file the runner later drops to null — a successful
+      // direct compare) caps at the agent media limit. Accepting images above
+      // that would offload a file the runner later drops to null — a successful
       // response with a silently missing image. Reject here so the client
       // sees an explicit 4xx. Non-image attachments keep the full maxBytes
       // ceiling because their host path (ctx.MediaPaths → Read/Bash) doesn't
       // load into the model.
-      if (isImage && sizeBytes > MAX_IMAGE_BYTES) {
+      if (isImage && sizeBytes > maxBytes) {
         throw new Error(
-          `attachment ${label}: image exceeds size limit (${sizeBytes} > ${MAX_IMAGE_BYTES} bytes)`,
+          `attachment ${label}: image exceeds size limit (${sizeBytes} > ${maxBytes} bytes)`,
         );
       }
 

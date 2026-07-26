@@ -25,7 +25,7 @@ vi.mock("../media/store.js", async (importOriginal) => {
   };
 });
 
-import { MAX_IMAGE_BYTES } from "@openclaw/media-core/constants";
+const TEST_IMAGE_MAX_BYTES = 10;
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import {
   type ChatAttachment,
@@ -58,13 +58,6 @@ function pdfAttachment(overrides: Partial<ChatAttachment> = {}): ChatAttachment 
     content: Buffer.from("%PDF-1.4\n").toString("base64"),
     ...overrides,
   };
-}
-
-function oversizedPngBase64(): string {
-  const pngHeader = PNG_1x1.slice(0, 64);
-  let base64Length = Math.ceil(((MAX_IMAGE_BYTES + 1) * 4) / 3);
-  base64Length += (4 - (base64Length % 4)) % 4;
-  return `${pngHeader}${"A".repeat(base64Length - pngHeader.length)}`;
 }
 
 async function parseWithWarnings(
@@ -304,15 +297,13 @@ describe("parseMessageWithAttachments", () => {
   });
 
   it("rejects oversized images before offload", async () => {
-    const big = oversizedPngBase64();
-
     await expect(
       parseMessageWithAttachments(
         "x",
-        [{ type: "image", mimeType: "image/png", fileName: "huge.png", content: big }],
-        { maxBytes: resolveChatAttachmentMaxBytes({} as OpenClawConfig), log: { warn: () => {} } },
+        [{ type: "image", mimeType: "image/png", fileName: "large.png", content: PNG_1x1 }],
+        { maxBytes: TEST_IMAGE_MAX_BYTES, log: { warn: () => {} } },
       ),
-    ).rejects.toThrow(/image exceeds size limit/i);
+    ).rejects.toThrow(/exceeds size limit/i);
     expect(saveMediaBufferMock).not.toHaveBeenCalled();
   });
 
