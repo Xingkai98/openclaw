@@ -1,4 +1,7 @@
-import { copyReplyPayloadMetadata } from "../../auto-reply/reply-payload.js";
+import {
+  copyReplyPayloadMetadata,
+  getReplyPayloadMetadata,
+} from "../../auto-reply/reply-payload.js";
 import { finalizeInboundContext } from "../../auto-reply/reply/inbound-context.js";
 import {
   markReplyDispatchBeforeDeliverDeadlineOwned,
@@ -155,17 +158,23 @@ export async function applyMessageSendingHook(params: {
     };
   }
   try {
+    const modelIdentity = getReplyPayloadMetadata(params.payload)?.modelIdentity;
+    const metadata: Record<string, unknown> = {
+      channel: params.channel,
+      accountId: params.accountId,
+      mediaUrls: params.payloadSummary.mediaUrls,
+    };
+    if (modelIdentity) {
+      metadata.modelProvider = modelIdentity.provider;
+      metadata.modelId = modelIdentity.model;
+    }
     const sendingResult = await params.hookRunner!.runMessageSending(
       {
         to: params.to,
         content: params.payloadSummary.hookContent ?? params.payloadSummary.text,
         replyToId: params.replyToId ?? undefined,
         threadId: params.threadId ?? undefined,
-        metadata: {
-          channel: params.channel,
-          accountId: params.accountId,
-          mediaUrls: params.payloadSummary.mediaUrls,
-        },
+        metadata,
       },
       {
         channelId: params.channel,

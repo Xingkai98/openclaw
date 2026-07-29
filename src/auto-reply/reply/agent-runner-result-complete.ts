@@ -8,7 +8,7 @@ import { updateSessionEntry } from "../../config/sessions/session-accessor.js";
 import { enqueueSystemEvent } from "../../infra/system-events.js";
 import { sessionDeliveryChannel } from "../../utils/delivery-context.shared.js";
 import { DEFAULT_HEARTBEAT_ACK_MAX_CHARS, stripHeartbeatToken } from "../heartbeat.js";
-import { setReplyPayloadMetadata } from "../reply-payload.js";
+import { getReplyPayloadMetadata, setReplyPayloadMetadata } from "../reply-payload.js";
 import { SILENT_REPLY_TOKEN } from "../tokens.js";
 import type { ReplyPayload } from "../types.js";
 import {
@@ -377,6 +377,9 @@ export async function completeReplyAgentRun(input: {
             isHeartbeat,
             payload,
           }),
+          // Carry model identity so message_sending hooks can verify
+          // the actual runtime model against agent self-tags.
+          modelIdentity: { provider: providerUsed, model: modelUsed },
         });
       }
       const pendingFinalDeliveryContext = resolveReplyRunDeliveryContext({
@@ -416,6 +419,18 @@ export async function completeReplyAgentRun(input: {
           pendingFinalDeliveryIntentId
       ) {
         throw new Error("pending final delivery session changed or was deleted");
+      }
+    }
+  }
+  // Carry model identity on every payload so message_sending hooks can
+  // verify the actual runtime model against agent self-tagged output.
+  for (const payload of finalPayloads) {
+    if (payload && typeof payload === "object") {
+      const existing = getReplyPayloadMetadata(payload);
+      if (!existing?.modelIdentity) {
+        setReplyPayloadMetadata(payload, {
+          modelIdentity: { provider: providerUsed, model: modelUsed },
+        });
       }
     }
   }

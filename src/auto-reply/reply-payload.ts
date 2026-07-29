@@ -287,6 +287,11 @@ export type ReplyPayloadMetadata = {
   heartbeatTerminalToolFailure?: {
     toolName: string;
   };
+  /** Model identity used to generate this reply — carried for delivery-hook verification. */
+  modelIdentity?: {
+    provider: string;
+    model: string;
+  };
 };
 
 const replyPayloadMetadata = new WeakMap<object, ReplyPayloadMetadata>();
