@@ -390,7 +390,12 @@ export function createGatewaySubagentRuntime(): PluginRuntime["subagent"] {
       const hasRequestScopeClient = Boolean(scope?.client);
       let allowOverride = hasRequestScopeClient && canClientUseModelOverride(scope?.client ?? null);
       let allowSyntheticModelOverride = false;
-      if (overrideRequested && !allowOverride && !hasRequestScopeClient) {
+      if (overrideRequested && !allowOverride) {
+        // Consult the per-plugin config policy (allowModelOverride + allowedModels).
+        // This is the only config-level authorization path and applies in both
+        // request-scoped (interactive) and background (fallback) contexts.
+        // Admin-scoped callers and internal flags bypass this check upstream via
+        // canClientUseModelOverride.
         const fallbackAuth = authorizeFallbackModelOverride({
           pluginId: scope?.pluginId,
           provider: params.provider,
@@ -401,9 +406,6 @@ export function createGatewaySubagentRuntime(): PluginRuntime["subagent"] {
         }
         allowOverride = true;
         allowSyntheticModelOverride = true;
-      }
-      if (overrideRequested && !allowOverride) {
-        throw new Error("provider/model override is not authorized for this plugin subagent run.");
       }
       const payload = await dispatchGatewayMethodInProcess<{ runId?: string; runtime?: unknown }>(
         "agent",
