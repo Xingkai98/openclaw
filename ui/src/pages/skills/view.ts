@@ -467,7 +467,10 @@ function renderClawHubResults(props: SkillsProps) {
             <button
               class="btn btn--sm"
               ?disabled=${skillControlsLocked(props)}
-              @click=${() => props.onClawHubInstall(r.slug)}
+              @click=${() => {
+                const ref = r.ownerHandle ? `@${r.ownerHandle}/${r.slug}` : r.slug;
+                props.onClawHubInstall(ref);
+              }}
             >
               ${activeClawHubMutation(props, r.slug)
                 ? t("skillsPage.installing")
@@ -552,7 +555,10 @@ function renderClawHubDetailDialog(props: SkillsProps) {
                       ?disabled=${skillControlsLocked(props)}
                       @click=${() => {
                         if (props.clawhubDetailSlug) {
-                          props.onClawHubInstall(props.clawhubDetailSlug);
+                          const ref = detail?.owner?.handle
+                            ? `@${detail.owner.handle}/${props.clawhubDetailSlug}`
+                            : props.clawhubDetailSlug;
+                          props.onClawHubInstall(ref);
                         }
                       }}
                     >

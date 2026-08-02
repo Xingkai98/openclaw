@@ -21,6 +21,7 @@ import {
 export type ClawHubSearchResult = {
   score: number;
   slug: string;
+  ownerHandle?: string | null;
   displayName: string;
   summary?: string;
   icon?: string | null;
