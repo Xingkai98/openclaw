@@ -129,6 +129,7 @@ export class QmdSessionExporter {
       const entry = await buildSessionEntry(sessionFile, {
         generatedByDreamingNarrative: corpusEntry.generatedByDreamingNarrative === true,
         generatedByCronRun: corpusEntry.generatedByCronRun === true,
+        ...(corpusEntry.sessionKind ? { sessionKind: corpusEntry.sessionKind } : {}),
         ...(corpusEntry.transcriptSource === "sqlite" && corpusEntry.storePath
           ? {
               agentId: corpusEntry.agentId,
