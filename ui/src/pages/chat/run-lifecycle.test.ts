@@ -352,8 +352,8 @@ describe("reconcileChatRunLifecycle indicators", () => {
   });
 });
 
-describe("reconcileChatRunFromCurrentSessionRow stale-active suppression (#87875)", () => {
-  it("keeps a local run active when the gateway registry overrides a terminal snapshot", () => {
+describe("reconcileChatRunFromCurrentSessionRow stale-active handling (#87875)", () => {
+  it("reconciles a terminal run even when the gateway registry left hasActiveRun: true", () => {
     const host = makeHost({
       chatRunId: "run-before-finalize",
       chatStream: "final answer",
@@ -367,9 +367,9 @@ describe("reconcileChatRunFromCurrentSessionRow stale-active suppression (#87875
         hasActiveRun: true,
         status: "done",
       }),
-    ).toBe(false);
-    expect(host.chatRunId).toBe("run-before-finalize");
-    expect(host.chatStream).toBe("final answer");
+    ).toBe(true);
+    expect(host.chatRunId).toBeNull();
+    expect(host.chatStream).toBeNull();
   });
 
   it("honors an explicit inactive run when the status is stale", () => {
