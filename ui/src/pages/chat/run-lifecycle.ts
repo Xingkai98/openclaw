@@ -577,9 +577,9 @@ export function reconcileChatRunFromSessionRow(
   if (!host.chatRunId && host.chatStream == null) {
     return false;
   }
-  if (row.hasActiveRun === true) {
-    return false;
-  }
+  // Use the status-aware helper: a row with hasActiveRun: true but a terminal
+  // status (e.g. "done") is NOT an active run — the status takes precedence.
+  // The raw boolean can stay stale when the run-ended reducer misses a row.
   if (isSessionRunActive(row)) {
     return false;
   }
