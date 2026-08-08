@@ -994,7 +994,7 @@ describe("completeWithPreparedSimpleCompletionModel", () => {
     },
   );
 
-  it("omits reasoning for local simple completion when thinking is off", async () => {
+  it("preserves reasoning off for simple completion when thinking is off", async () => {
     const model = {
       provider: "openai",
       id: "gpt-5.4",
@@ -1029,6 +1029,7 @@ describe("completeWithPreparedSimpleCompletionModel", () => {
         messages: [{ role: "user", content: "pong", timestamp: 1 }],
       },
       {
+        reasoning: "off",
         apiKey: "sk-test",
       },
     );
