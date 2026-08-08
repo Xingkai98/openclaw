@@ -106,7 +106,15 @@ async function removeScheduledSessionTurn(params: {
 }): Promise<boolean> {
   try {
     const result = await params.cron.remove(params.jobId);
-    return didCronCleanupJob(result);
+    const cleaned = didCronCleanupJob(result);
+    if (cleaned && params.sessionKey) {
+      deletePluginSessionSchedulerJob({
+        pluginId: params.pluginId,
+        jobId: params.jobId,
+        sessionKey: params.sessionKey,
+      });
+    }
+    return cleaned;
   } catch (error) {
     log.warn(
       `plugin session turn cleanup failed (${formatScheduleLogContext(params)}): ${formatErrorMessage(error)}`,
