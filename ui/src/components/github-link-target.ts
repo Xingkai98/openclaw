@@ -35,6 +35,18 @@ export function parseGitHubItemPath(url: URL): GitHubItemTarget | null {
   return kind ? { kind, number: Number(numberText), owner, repo } : null;
 }
 
+/**
+ * Reports whether a GitHub item URL names the generic item root — exactly
+ * `/owner/repo/{issues|pull}/N` with no trailing path segment, anchor, or
+ * query. Only root URLs are safe to compact to `owner/repo#N`; a deep link
+ * (e.g. `/pull/123/files`) carries destination identity the label must keep.
+ */
+export function isGitHubItemRootUrl(url: URL): boolean {
+  return (
+    url.pathname.split("/").filter(Boolean).length === 4 && url.hash === "" && url.search === ""
+  );
+}
+
 export function parseGitHubLinkTarget(href: string): GitHubLinkTarget | null {
   let url: URL;
   try {

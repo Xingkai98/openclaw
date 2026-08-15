@@ -510,6 +510,19 @@ describe("toSanitizedMarkdownHtml links", () => {
     });
 
     it.each([
+      ["pull files", "https://github.com/openclaw/openclaw/pull/3434/files"],
+      ["pull commits", "https://github.com/openclaw/openclaw/pull/3434/commits"],
+      ["issue comment anchor", "https://github.com/openclaw/openclaw/issues/3435#issuecomment-456"],
+      ["pull discussion anchor", "https://github.com/openclaw/openclaw/pull/3434#discussion_r789"],
+      ["diff query", "https://github.com/openclaw/openclaw/pull/3434/files?diff=split&w=1"],
+    ])("keeps the deep-link destination for %s", (_kind, url) => {
+      const fragment = htmlFragment(toSanitizedMarkdownHtml(url));
+      const link = fragment.querySelector<HTMLAnchorElement>("a");
+      expect(link?.getAttribute("href")).toBe(url);
+      expect(link?.textContent).toBe(url);
+    });
+
+    it.each([
       ["non-github host", "[docs](https://example.com/openclaw)"],
       ["lookalike host", "[docs](https://notgithub.com/openclaw)"],
       ["github in query", "[docs](https://example.com/?to=https://github.com/openclaw)"],
