@@ -108,32 +108,77 @@ export function fileKindForPath(path: string): FileKind {
   return FILE_KIND_BY_EXTENSION[extension] ?? "file";
 }
 
+type FileSuffixNode = {
+  count: number;
+  children: Map<string, FileSuffixNode>;
+};
+
+function createFileSuffixNode(): FileSuffixNode {
+  return { count: 0, children: new Map() };
+}
+
 /**
  * Shortest unambiguous label per path: the basename alone when it is unique
  * among the supplied paths, otherwise the smallest trailing run of segments
  * that no other path shares. Callers pass every path rendered together so two
  * `Button.tsx` links from different directories stay distinguishable.
+ *
+ * Implemented with a message-local reversed suffix trie: each distinct path is
+ * inserted once and every suffix node records how many paths share that
+ * suffix, so each path's shortest unique suffix is a single walk down the trie
+ * rather than a rescan of every other path per depth.
  */
 export function shortestFileLabels(paths: readonly string[]): Map<string, string> {
   const unique = [...new Set(paths)];
   const segmentsByPath = new Map(
     unique.map((path) => [path, path.split(PATH_SEPARATOR_RE).filter(Boolean)]),
   );
-  const suffixKey = (segments: readonly string[], depth: number) =>
-    segments.slice(-depth).join("/");
+
+  // Build the suffix-count index. Each node keys on one segment and counts how
+  // many distinct paths share that suffix, matching the previous "/"-joined
+  // suffix comparison, so two paths that differ only in separator style
+  // (`a/b` vs `a\b`) share nodes and disambiguate against each other exactly
+  // as before.
+  const root = createFileSuffixNode();
+  for (const segments of segmentsByPath.values()) {
+    let node = root;
+    for (let i = segments.length - 1; i >= 0; i -= 1) {
+      const segment = segments[i];
+      if (segment === undefined) {
+        continue;
+      }
+      let child = node.children.get(segment);
+      if (!child) {
+        child = createFileSuffixNode();
+        node.children.set(segment, child);
+      }
+      node = child;
+      node.count += 1;
+    }
+  }
+
   const labels = new Map<string, string>();
   for (const path of unique) {
     const segments = segmentsByPath.get(path) ?? [];
-    let depth = 1;
-    while (
-      depth < segments.length &&
-      unique.some(
-        (other) =>
-          other !== path &&
-          suffixKey(segmentsByPath.get(other) ?? [], depth) === suffixKey(segments, depth),
-      )
-    ) {
-      depth += 1;
+    // Default to the full path: it is always the fallback when every shorter
+    // suffix is shared by another path.
+    let depth = segments.length;
+    let node = root;
+    for (let i = segments.length - 1; i >= 0; i -= 1) {
+      const segment = segments[i];
+      if (segment === undefined) {
+        continue;
+      }
+      const child = node.children.get(segment);
+      if (!child) {
+        break;
+      }
+      node = child;
+      const candidateDepth = segments.length - i;
+      if (node.count === 1) {
+        depth = candidateDepth;
+        break;
+      }
     }
     // Render the suffix with the separator the path itself used so a Windows
     // path never reads as a POSIX one.
